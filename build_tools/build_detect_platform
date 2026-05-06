@@ -147,7 +147,7 @@ case "$TARGET_OS" in
         else
             PLATFORM_LDFLAGS="$PLATFORM_LDFLAGS -latomic"
         fi
-        PLATFORM_LDFLAGS="$PLATFORM_LDFLAGS -lpthread -lrt -laio"
+        PLATFORM_LDFLAGS="$PLATFORM_LDFLAGS -lpthread -lrt"
         # PORT_FILES=port/linux/linux_specific.cc
         ;;
     SunOS)
@@ -528,7 +528,7 @@ if test "$USE_HDFS"; then
   JAVA_LDFLAGS="$JAVA_LDFLAGS $HDFS_LDFLAGS"
 fi
 
-if test "$USE_HASWELL" || [ "$PORTABLE" == "1" ]; then
+if test "$USE_HASWELL"; then
   COMMON_FLAGS="$COMMON_FLAGS -march=haswell"
 elif test "$USE_SSE"; then
   COMMON_FLAGS="$COMMON_FLAGS -msse4.2 -mpclmul"

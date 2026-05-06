@@ -544,7 +544,10 @@ find_package(Threads REQUIRED)
 
 
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  LIST(APPEND TERARK_SHARED_DEPENDS pthread gomp aio rt dl)
+  LIST(APPEND TERARK_SHARED_DEPENDS pthread gomp rt dl)
+  if(WITH_TERARK_ZIP)
+    LIST(APPEND TERARK_SHARED_DEPENDS aio)
+  endif()
   if ((${CMAKE_BUILD_TYPE} STREQUAL "Debug") AND (${WITH_ASAN}))
     message("[terarkdb] build terarkdb with asan")
     LIST(APPEND TERARK_SHARED_DEPENDS asan)

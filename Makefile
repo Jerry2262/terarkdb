@@ -141,19 +141,7 @@ endif
 # if we're compiling for release, compile without debug code (-DNDEBUG)
 ifeq ($(DEBUG_LEVEL),0)
 OPT += -DNDEBUG
-
-# ifneq ($(USE_RTTI), 1)
-# 	CXXFLAGS += -fno-rtti
-# else
-# 	CXXFLAGS += -DROCKSDB_USE_RTTI
-# endif
-# else
-# ifneq ($(USE_RTTI), 0)
-# 	CXXFLAGS += -DROCKSDB_USE_RTTI
-# else
-# 	CXXFLAGS += -fno-rtti
-# endif
-
+else
 $(warning Warning: Compiling in debug mode. Don't use the resulting binary in production)
 endif
 
@@ -308,8 +296,9 @@ endif
 # This (the first rule) must depend on "all".
 default: all
 
-WARNING_FLAGS = -W -Wextra -Wall -Wsign-compare -Wshadow \
-  -Wunused-parameter
+# WARNING_FLAGS = -W -Wextra -Wall -Wsign-compare -Wshadow \
+#   -Wunused-parameter
+WARNING_FLAGS = -Wall -Wno-unused-parameter -Wno-comment
 
 ifeq ($(PLATFORM), OS_OPENBSD)
 	WARNING_FLAGS += -Wno-unused-lambda-capture
@@ -1655,10 +1644,10 @@ SHA256_CMD = sha256sum
 
 ZLIB_VER ?= 1.2.12
 ZLIB_SHA256 ?= 91844808532e5ce316b3c010929493c0244f3d37593afd6de04f71821d5136d9
-ZLIB_DOWNLOAD_BASE ?= http://zlib.net
+ZLIB_DOWNLOAD_BASE ?= http://zlib.net/fossils
 BZIP2_VER ?= 1.0.8
 BZIP2_SHA256 ?= ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269
-BZIP2_DOWNLOAD_BASE ?= https://sourceware.org/pub/bzip2
+BZIP2_DOWNLOAD_BASE ?= https://gstreamer.freedesktop.org/src/mirror/bzip2
 SNAPPY_VER ?= 1.1.4
 SNAPPY_SHA256 ?= 134bfe122fd25599bb807bb8130e7ba6d9bdb851e0b16efcb83ac4f5d0b70057
 SNAPPY_DOWNLOAD_BASE ?= https://github.com/google/snappy/releases/download
@@ -1729,7 +1718,7 @@ libbz2.a:
 
 libsnappy.a:
 	-rm -rf snappy-$(SNAPPY_VER)
-	curl -O -L ${CURL_SSL_OPTS} ${SNAPPY_DOWNLOAD_BASE}/$(SNAPPY_VER)/snappy-$(SNAPPY_VER).tar.gz
+	curl -O -L -k ${CURL_SSL_OPTS} ${SNAPPY_DOWNLOAD_BASE}/$(SNAPPY_VER)/snappy-$(SNAPPY_VER).tar.gz
 	SNAPPY_SHA256_ACTUAL=`$(SHA256_CMD) snappy-$(SNAPPY_VER).tar.gz | cut -d ' ' -f 1`; \
 	if [ "$(SNAPPY_SHA256)" != "$$SNAPPY_SHA256_ACTUAL" ]; then \
 		echo snappy-$(SNAPPY_VER).tar.gz checksum mismatch, expected=\"$(SNAPPY_SHA256)\" actual=\"$$SNAPPY_SHA256_ACTUAL\"; \
@@ -1742,7 +1731,7 @@ libsnappy.a:
 
 liblz4.a:
 	-rm -rf lz4-$(LZ4_VER)
-	curl -O -L ${CURL_SSL_OPTS} ${LZ4_DOWNLOAD_BASE}/v$(LZ4_VER).tar.gz
+	curl -O -L -k ${CURL_SSL_OPTS} ${LZ4_DOWNLOAD_BASE}/v$(LZ4_VER).tar.gz
 	mv v$(LZ4_VER).tar.gz lz4-$(LZ4_VER).tar.gz
 	LZ4_SHA256_ACTUAL=`$(SHA256_CMD) lz4-$(LZ4_VER).tar.gz | cut -d ' ' -f 1`; \
 	if [ "$(LZ4_SHA256)" != "$$LZ4_SHA256_ACTUAL" ]; then \
@@ -1755,7 +1744,7 @@ liblz4.a:
 
 libzstd.a:
 	-rm -rf zstd-$(ZSTD_VER)
-	curl -O -L ${CURL_SSL_OPTS} ${ZSTD_DOWNLOAD_BASE}/v$(ZSTD_VER).tar.gz
+	curl -O -L -k ${CURL_SSL_OPTS} ${ZSTD_DOWNLOAD_BASE}/v$(ZSTD_VER).tar.gz
 	mv v$(ZSTD_VER).tar.gz zstd-$(ZSTD_VER).tar.gz
 	ZSTD_SHA256_ACTUAL=`$(SHA256_CMD) zstd-$(ZSTD_VER).tar.gz | cut -d ' ' -f 1`; \
 	if [ "$(ZSTD_SHA256)" != "$$ZSTD_SHA256_ACTUAL" ]; then \

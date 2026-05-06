@@ -192,7 +192,7 @@ ifneq ($(DEBUG_LEVEL),0)
 	JAVAC_ARGS = -Xlint:deprecation -Xlint:unchecked
 endif
 
-SEARCH_REPO_URL?=http://search.maven.org/remotecontent?filepath=
+SEARCH_REPO_URL?=https://repo1.maven.org/maven2/
 CENTRAL_REPO_URL?=https://repo1.maven.org/maven2/
 clean: clean-not-downloaded clean-downloaded
 
