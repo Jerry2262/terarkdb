@@ -352,6 +352,10 @@ void IndexBlockIter::Seek(const Slice& target) {
   if (data_ == nullptr) {  // Not init yet
     return;
   }
+
+  uint32_t region_offset = GetRestartPoint(static_cast<uint32_t>((num_restarts_ - 1) / 2));
+  PREFETCH(data_ + region_offset, 0, 3);
+
   uint32_t index = 0;
   bool ok = false;
   if (prefix_index_) {
@@ -452,6 +456,7 @@ void BlockIter<TValue>::CorruptionError() {
 bool DataBlockIter::ParseNextDataKey(const char* limit) {
   current_ = NextEntryOffset();
   const char* p = data_ + current_;
+  PREFETCH(p, 0, 3);
   if (!limit) {
     limit = data_ + restarts_;  // Restarts come right after data
   }
@@ -526,6 +531,7 @@ bool DataBlockIter::ParseNextDataKey(const char* limit) {
 bool IndexBlockIter::ParseNextIndexKey() {
   current_ = NextEntryOffset();
   const char* p = data_ + current_;
+  PREFETCH(p, 0, 3);
   const char* limit = data_ + restarts_;  // Restarts come right after data
   if (p >= limit) {
     // No more entries to return.  Mark as invalid.
@@ -618,6 +624,10 @@ bool BlockIter<TValue>::BinarySeek(const Slice& target, uint32_t left,
 
   while (left < right) {
     uint32_t mid = (left + right + 1) / 2;
+    uint32_t possible_mid1 = (mid + right + 1) / 2;
+    uint32_t possible_mid2 = (left + mid) / 2;
+    PREFETCH(data_ + GetRestartPoint(possible_mid1), 0, 3);
+    PREFETCH(data_ + GetRestartPoint(possible_mid2), 0, 3);
     uint32_t region_offset = GetRestartPoint(mid);
     uint32_t shared, non_shared;
     const char* key_ptr = DecodeKeyFunc()(

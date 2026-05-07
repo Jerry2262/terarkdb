@@ -466,8 +466,11 @@ InlineSkipList<Comparator>::FindGreaterOrEqual(const char* key) const {
   const DecodedKey key_decoded = compare_.decode_key(key);
   while (true) {
     Node* next = x->Next(level);
+    if (level > 0) {
+      PREFETCH(x->Next(level - 1), 0, 3);
+    }
     if (next != nullptr) {
-      PREFETCH(next->Next(level), 0, 1);
+      PREFETCH(next->Next(level), 0, 3);
     }
     // Make sure the lists are sorted
     assert(x == head_ || next == nullptr || KeyIsAfterNode(next->Key(), x));
@@ -510,7 +513,7 @@ InlineSkipList<Comparator>::FindLessThan(const char* key, Node** prev,
     assert(x != nullptr);
     Node* next = x->Next(level);
     if (next != nullptr) {
-      PREFETCH(next->Next(level), 0, 1);
+      PREFETCH(next->Next(level), 0, 3);
     }
     assert(x == head_ || next == nullptr || KeyIsAfterNode(next->Key(), x));
     assert(x == head_ || KeyIsAfterNode(key_decoded, x));
@@ -564,7 +567,7 @@ uint64_t InlineSkipList<Comparator>::EstimateCount(const char* key) const {
     assert(x == head_ || compare_(x->Key(), key_decoded) < 0);
     Node* next = x->Next(level);
     if (next != nullptr) {
-      PREFETCH(next->Next(level), 0, 1);
+      PREFETCH(next->Next(level), 0, 3);
     }
     if (next == nullptr || compare_(next->Key(), key_decoded) >= 0) {
       if (level == 0) {
@@ -681,11 +684,11 @@ void InlineSkipList<Comparator>::FindSpliceForLevel(const DecodedKey& key,
   while (true) {
     Node* next = before->Next(level);
     if (next != nullptr) {
-      PREFETCH(next->Next(level), 0, 1);
+      PREFETCH(next->Next(level), 0, 3);
     }
     if (prefetch_before == true) {
       if (next != nullptr && level > 0) {
-        PREFETCH(next->Next(level - 1), 0, 1);
+        PREFETCH(next->Next(level - 1), 0, 3);
       }
     }
     assert(before == head_ || next == nullptr ||
