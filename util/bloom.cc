@@ -241,16 +241,19 @@ static inline bool HashMayMatchPrepared(uint32_t h2, int num_probes,
   const uint32_t delta = (h >> 17) | (h << 15);  // Rotate right 17 bits
   int rem_probes = num_probes;
 
+  // Pre-compute delta offsets for 8 lanes: {0, delta, 2*delta, ..., 7*delta}
+  const svuint32_t delta_offsets =
+      svmul_u32_z(svptrue_b32(), svindex_u32(0, 1), svdup_u32(delta));
+  const uint32_t delta_8 = delta * 8;
+
   while (rem_probes > 0) {
     const uint32_t *data_as_uint32 = (const uint32_t *)data_at_cache_line;
 
     int32_t probes_this_iter = (rem_probes < 8) ? rem_probes : 8;
     svbool_t pg = svwhilelt_b32(0, probes_this_iter);
 
-    // h[j] = h + j*delta  for j = 0..7 (arithmetic progression, vectorized)
-    svuint32_t indices = svindex_u32(0, 1);
-    svuint32_t hash_vector =
-        svmla_u32_z(pg, svdup_u32(h), indices, svdup_u32(delta));
+    // h[j] = h + j*delta  for j = 0..7
+    svuint32_t hash_vector = svadd_u32_z(pg, svdup_u32(h), delta_offsets);
 
     // bitpos = h[j] % (CACHE_LINE_SIZE * 8)  -- uses low bits, matching AddHash
     svuint32_t bitpos = svand_u32_z(
@@ -277,7 +280,7 @@ static inline bool HashMayMatchPrepared(uint32_t h2, int num_probes,
     }
 
     if (rem_probes > 8) {
-      h += delta * 8;
+      h += delta_8;
     }
     rem_probes -= probes_this_iter;
   }
