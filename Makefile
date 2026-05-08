@@ -657,6 +657,10 @@ SHARED_ASM_OBJECTS = $(LIB_SOURCES_ASM:.S=.o)
 SHARED_C_LIBOBJECTS = $(patsubst %.o,shared-objects/%.o,$(SHARED_C_OBJECTS))
 SHARED_ASM_LIBOBJECTS = $(patsubst %.o,shared-objects/%.o,$(SHARED_ASM_OBJECTS))
 shared_libobjects = $(patsubst %,shared-objects/%,$(LIB_CC_OBJECTS))
+else ifeq ($(HAVE_ARM64_CRC32),1)
+SHARED_ASM_OBJECTS = $(LIB_SOURCES_ASM:.S=.o)
+SHARED_ASM_LIBOBJECTS = $(patsubst %.o,shared-objects/%.o,$(SHARED_ASM_OBJECTS))
+shared_libobjects = $(patsubst %,shared-objects/%,$(LIB_CC_OBJECTS))
 else
 shared_libobjects = $(patsubst %,shared-objects/%,$(LIBOBJECTS))
 endif
@@ -687,7 +691,7 @@ ifeq ($(HAVE_POWER8),1)
 shared_all_libobjects = $(shared_libobjects) $(shared-ppc-objects)
 endif
 ifeq ($(HAVE_ARM64_CRC32),1)
-shared_all_libobjects = $(shared_libobjects)
+shared_all_libobjects = $(shared_libobjects) $(SHARED_ASM_LIBOBJECTS)
 endif
 $(SHARED4): $(shared_all_libobjects)
 	$(CXX) $(PLATFORM_SHARED_LDFLAGS)$(SHARED3) $(CXXFLAGS) $(PLATFORM_SHARED_CFLAGS) $(shared_all_libobjects) $(LDFLAGS) -o $@
