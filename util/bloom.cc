@@ -233,38 +233,40 @@ void FullFilterBitsReader::GetFilterMeta(const Slice& filter,
   *num_lines = DecodeFixed32(filter.data() + len - 4);
 }
 
+static inline bool HashMayMatchPrepared(uint32_t h2, int num_probes,
+                                        const char *data_at_cache_line) {
+  uint32_t h = h2;
+  const uint32_t delta = (h >> 17) | (h << 15);  // Rotate right 17 bits
+  for (int i = 0; i < num_probes; ++i) {
+    // 9-bit address within 512 bit cache line
+    int bitpos = h % (CACHE_LINE_SIZE * 8);
+    if ((data_at_cache_line[bitpos >> 3] & (char(1) << (bitpos & 7))) == 0) {
+      return false;
+    }
+    h += delta;
+  }
+  return true;
+}
+
 bool FullFilterBitsReader::HashMayMatch(const uint32_t& hash,
                                         const Slice& filter,
                                         const size_t& num_probes,
                                         const uint32_t& num_lines) {
   uint32_t len = static_cast<uint32_t>(filter.size());
-  if (len <= 5) return false;  // remain the same with original filter
+  if (len <= 5) return false;
 
   // It is ensured the params are valid before calling it
   assert(num_probes != 0);
   assert(num_lines != 0 && (len - 5) % num_lines == 0);
   const char* data = filter.data();
 
-  uint32_t h = hash;
-  const uint32_t delta = (h >> 17) | (h << 15);  // Rotate right 17 bits
-  // Left shift by an extra 3 to convert bytes to bits
-  uint32_t b = (h % num_lines) << (log2_cache_line_size_ + 3);
-  PREFETCH(&data[b / 8], 0 /* rw */, 1 /* locality */);
-  PREFETCH(&data[b / 8 + (1 << log2_cache_line_size_) - 1], 0 /* rw */,
-           1 /* locality */);
+  uint32_t bytes_to_cache_line = (hash % num_lines) << log2_cache_line_size_;
+  PREFETCH(&data[bytes_to_cache_line], 0 /* rw */, 1 /* locality */);
+  PREFETCH(&data[bytes_to_cache_line + (1 << log2_cache_line_size_) - 1],
+           0 /* rw */, 1 /* locality */);
 
-  for (uint32_t i = 0; i < num_probes; ++i) {
-    // Since CACHE_LINE_SIZE is defined as 2^n, this line will be optimized
-    //  to a simple and operation by compiler.
-    const uint32_t bitpos = b + (h & ((1 << (log2_cache_line_size_ + 3)) - 1));
-    if (((data[bitpos / 8]) & (1 << (bitpos % 8))) == 0) {
-      return false;
-    }
-
-    h += delta;
-  }
-
-  return true;
+  return HashMayMatchPrepared(hash, static_cast<int>(num_probes),
+                              data + bytes_to_cache_line);
 }
 
 // An implementation of filter policy
