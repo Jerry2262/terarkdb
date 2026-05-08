@@ -16,6 +16,8 @@
 #include "util/coding.h"
 #include "util/hash.h"
 
+#include <arm_sve.h>
+
 namespace TERARKDB_NAMESPACE {
 
 class BlockBasedFilterBlockBuilder;
@@ -237,14 +239,56 @@ static inline bool HashMayMatchPrepared(uint32_t h2, int num_probes,
                                         const char *data_at_cache_line) {
   uint32_t h = h2;
   const uint32_t delta = (h >> 17) | (h << 15);  // Rotate right 17 bits
-  for (int i = 0; i < num_probes; ++i) {
-    // 9-bit address within 512 bit cache line
-    int bitpos = h % (CACHE_LINE_SIZE * 8);
-    if ((data_at_cache_line[bitpos >> 3] & (char(1) << (bitpos & 7))) == 0) {
+  int rem_probes = num_probes;
+
+  while (rem_probes > 0) {
+    const uint32_t *data_as_uint32 = (const uint32_t *)data_at_cache_line;
+
+    int32_t probes_this_iter = (rem_probes < 8) ? rem_probes : 8;
+    svbool_t pg = svwhilelt_b32(0, probes_this_iter);
+
+    // h[j] = h + j*delta  for j = 0..7 (arithmetic progression, vectorized)
+    svuint32_t indices = svindex_u32(0, 1);
+    svuint32_t hash_vector =
+        svmla_u32_z(pg, svdup_u32(h), indices, svdup_u32(delta));
+
+    // bitpos = h[j] % (CACHE_LINE_SIZE * 8)  -- uses low bits, matching AddHash
+    svuint32_t bitpos = svand_u32_z(
+        pg, hash_vector, svdup_u32(static_cast<uint32_t>(CACHE_LINE_SIZE * 8 - 1)));
+
+    // word_address = bitpos >> 5  (9-bit → 4 bits for 16 uint32 words)
+    // bit_in_word = bitpos & 31    (5 bits within the uint32)
+    svuint32_t word_addresses = svlsr_u32_z(pg, bitpos, 5);
+    svuint32_t bit_in_word = svand_u32_z(pg, bitpos, svdup_u32(31));
+
+    // Load 512 bits = 2 SVE regs = 16 uint32 words
+    svuint32_t reg0 = svld1_u32(svptrue_b32(), data_as_uint32);
+    svuint32_t reg1 = svld1_vnum_u32(svptrue_b32(), data_as_uint32, 1);
+    svuint32x2_t all_values = svcreate2(reg0, reg1);
+    svuint32_t value_vector = svtbl2_u32(all_values, word_addresses);
+
+    // Check if all target bits are set
+    svuint32_t bit_mask = svlsl_u32_z(pg, svdup_u32(1), bit_in_word);
+    svuint32_t and_result = svand_u32_z(pg, value_vector, bit_mask);
+    svbool_t cmp_result = svcmpne_u32(pg, and_result, bit_mask);
+
+    if (svptest_any(pg, cmp_result)) {
       return false;
     }
-    h += delta;
+
+    if (rem_probes > 8) {
+      h += delta * 8;
+    }
+    rem_probes -= probes_this_iter;
   }
+  // for (int i = 0; i < num_probes; ++i) {
+  //   // 9-bit address within 512 bit cache line
+  //   int bitpos = h % (CACHE_LINE_SIZE * 8);
+  //   if ((data_at_cache_line[bitpos >> 3] & (char(1) << (bitpos & 7))) == 0) {
+  //     return false;
+  //   }
+  //   h += delta;
+  // }
   return true;
 }
 
