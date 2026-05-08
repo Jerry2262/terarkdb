@@ -687,7 +687,7 @@ shared-objects/util/crc32c_p8c10_clmul_const.o: util/crc32c_p8c10_clmul_const.S
 endif
 ifeq ($(HAVE_ARM64_SVE),1)
 shared-objects/util/bloom.o: util/bloom.cc
-	$(AM_V_CC)mkdir -p $(@D) && $(CXX) $(CXXFLAGS) -march=armv8-a+sve -DCACHE_LINE_SIZE=64U -c $< -o $@
+	$(AM_V_CC)mkdir -p $(@D) && $(CXX) $(CXXFLAGS) -march=armv8-a+sve2 -DCACHE_LINE_SIZE=64U -c $< -o $@
 endif
 $(shared_libobjects): shared-objects/%.o: %.cc
 	$(AM_V_CC)mkdir -p $(@D) && $(CXX) $(CXXFLAGS) $(PLATFORM_SHARED_CFLAGS) -c $< -o $@
@@ -2145,7 +2145,7 @@ util/crc32c_p8c10_clmul_const.o: util/crc32c_p8c10_clmul_const.S
 endif
 ifeq ($(HAVE_ARM64_SVE),1)
 util/bloom.o: util/bloom.cc
-	$(AM_V_CC)$(CXX) $(CXXFLAGS) -march=armv8-a+sve -DCACHE_LINE_SIZE=64U -c $< -o $@
+	$(AM_V_CC)$(CXX) $(CXXFLAGS) -march=armv8-a+sve2 -DCACHE_LINE_SIZE=64U -c $< -o $@
 endif
 .cc.o:
 	$(AM_V_CC)$(CXX) $(CXXFLAGS) -c $< -o $@ $(COVERAGEFLAGS)

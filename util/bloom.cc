@@ -261,7 +261,7 @@ static inline bool HashMayMatchPrepared(uint32_t h2, int num_probes,
 
     // word_address = bitpos >> 5  (9-bit → 4 bits for 16 uint32 words)
     // bit_in_word = bitpos & 31    (5 bits within the uint32)
-    svuint32_t word_addresses = svlsr_u32_z(pg, bitpos, 5);
+    svuint32_t word_addresses = svlsr_u32_z(pg, bitpos, svdup_u32(5));
     svuint32_t bit_in_word = svand_u32_z(pg, bitpos, svdup_u32(31));
 
     // Load 512 bits = 2 SVE regs = 16 uint32 words
