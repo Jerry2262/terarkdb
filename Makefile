@@ -138,6 +138,10 @@ CFLAGS +=  -DHAVE_POWER8
 HAVE_POWER8=1
 endif
 
+ifeq ($(shell uname -m),aarch64)
+HAVE_ARM64_CRC32=1
+endif
+
 # if we're compiling for release, compile without debug code (-DNDEBUG)
 ifeq ($(DEBUG_LEVEL),0)
 OPT += -DNDEBUG
@@ -666,11 +670,18 @@ shared-objects/util/crc32c_ppc.o: util/crc32c_ppc.c
 shared-objects/util/crc32c_ppc_asm.o: util/crc32c_ppc_asm.S
 	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
 endif
+ifeq ($(HAVE_ARM64_CRC32),1)
+shared-objects/util/crc32c_arm64_asm.o: util/crc32c_arm64_asm.S
+	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
+endif
 $(shared_libobjects): shared-objects/%.o: %.cc
 	$(AM_V_CC)mkdir -p $(@D) && $(CXX) $(CXXFLAGS) $(PLATFORM_SHARED_CFLAGS) -c $< -o $@
 
 ifeq ($(HAVE_POWER8),1)
 shared_all_libobjects = $(shared_libobjects) $(shared-ppc-objects)
+endif
+ifeq ($(HAVE_ARM64_CRC32),1)
+shared_all_libobjects = $(shared_libobjects)
 endif
 $(SHARED4): $(shared_all_libobjects)
 	$(CXX) $(PLATFORM_SHARED_LDFLAGS)$(SHARED3) $(CXXFLAGS) $(PLATFORM_SHARED_CFLAGS) $(shared_all_libobjects) $(LDFLAGS) -o $@
@@ -1781,6 +1792,10 @@ jls/util/crc32c_ppc_asm.o: util/crc32c_ppc_asm.S
 
 java_static_all_libobjects += $(java_static_ppc_libobjects)
 endif
+ifeq ($(HAVE_ARM64_CRC32),1)
+jls/util/crc32c_arm64_asm.o: util/crc32c_arm64_asm.S
+	$(AM_V_CC)$(CC) $(CFLAGS) $(JAVA_STATIC_FLAGS) $(JAVA_STATIC_INCLUDES) -c $< -o $@
+endif
 
 $(java_static_libobjects): jls/%.o: %.cc $(JAVA_COMPRESSIONS)
 	$(AM_V_CC)mkdir -p $(@D) && $(CXX) $(CXXFLAGS) $(JAVA_STATIC_FLAGS) $(JAVA_STATIC_INCLUDES) -fPIC -c $< -o $@ $(COVERAGEFLAGS)
@@ -1990,6 +2005,10 @@ jl/crc32c_ppc_asm.o: util/crc32c_ppc_asm.S
 	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
 java_all_libobjects += $(java_ppc_libobjects)
 endif
+ifeq ($(HAVE_ARM64_CRC32),1)
+jl/crc32c_arm64_asm.o: util/crc32c_arm64_asm.S
+	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
+endif
 
 $(java_libobjects): jl/%.o: %.cc
 	$(AM_V_CC)mkdir -p $(@D) && $(CXX) $(CXXFLAGS) -fPIC -c $< -o $@ $(COVERAGEFLAGS)
@@ -2085,6 +2104,10 @@ util/crc32c_ppc.o: util/crc32c_ppc.c
 	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
 
 util/crc32c_ppc_asm.o: util/crc32c_ppc_asm.S
+	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
+endif
+ifeq ($(HAVE_ARM64_CRC32),1)
+util/crc32c_arm64_asm.o: util/crc32c_arm64_asm.S
 	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
 endif
 .cc.o:

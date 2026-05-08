@@ -243,8 +243,14 @@ LIB_SOURCES_ASM =\
 LIB_SOURCES_C = \
   util/crc32c_ppc.c
 else
+ifeq ($(shell uname -m),aarch64)
+LIB_SOURCES_ASM =\
+  util/crc32c_arm64_asm.S
+LIB_SOURCES_C =
+else
 LIB_SOURCES_ASM =
 LIB_SOURCES_C =
+endif
 endif
 
 TOOL_LIB_SOURCES =                                              \

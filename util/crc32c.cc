@@ -38,6 +38,24 @@
 
 #endif
 
+#ifdef __aarch64__
+#include "util/crc32c_asm.h"
+
+#if __linux__
+#include <sys/auxv.h>
+
+#ifndef AT_HWCAP
+#define AT_HWCAP 16
+#endif
+
+#ifndef HWCAP_CRC32
+#define HWCAP_CRC32 (1 << 7)
+#endif
+
+#endif /* __linux__ */
+
+#endif /* __aarch64__ */
+
 namespace TERARKDB_NAMESPACE {
 namespace crc32c {
 
@@ -465,11 +483,29 @@ static bool isAltiVec() {
 #endif
 
 
+#if defined(__aarch64__)
+static bool isArmCrc32() {
+#if __linux__
+  return (getauxval(AT_HWCAP) & HWCAP_CRC32) != 0;
+#else
+  return false;
+#endif
+}
+
+uint32_t ExtendArmImpl(uint32_t crc, const char* buf, size_t size) {
+  return crc32c_arm64(crc, (const unsigned char*)buf, size);
+}
+#endif  // __aarch64__
+
+
 std::string IsFastCrc32Supported() {
   bool has_fast_crc = false;
   std::string fast_zero_msg;
   std::string arch;
-#ifdef HAVE_POWER8
+#if defined(__aarch64__)
+  has_fast_crc = isArmCrc32();
+  arch = "AArch64";
+#elif defined(HAVE_POWER8)
 #ifdef HAS_ALTIVEC
   if (arch_ppc_probe()) {
     has_fast_crc = true;
@@ -1201,7 +1237,13 @@ uint32_t crc32c_3way(uint32_t crc, const char* buf, size_t len) {
 #endif //HAVE_SSE42 && HAVE_PCLMUL
 
 static inline Function Choose_Extend() {
-#ifndef HAVE_POWER8
+#if defined(__aarch64__)
+  if (isArmCrc32()) {
+    return ExtendArmImpl;
+  } else {
+    return ExtendImpl<Slow_CRC32>;
+  }
+#elif !defined(HAVE_POWER8)
   if (isSSE42()) {
     if (isPCLMULQDQ()) {
 #if defined HAVE_SSE42  && defined HAVE_PCLMUL && !defined NO_THREEWAY_CRC32C
