@@ -493,7 +493,7 @@ static bool isArmCrc32() {
 }
 
 uint32_t ExtendArmImpl(uint32_t crc, const char* buf, size_t size) {
-  return crc32c_fusion_p8_c10_asm(buf, size, crc);
+  return ~crc32c_fusion_p8_c10_asm(buf, size, ~crc);
 }
 #endif  // __aarch64__
 
