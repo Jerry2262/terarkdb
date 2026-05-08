@@ -245,7 +245,8 @@ LIB_SOURCES_C = \
 else
 ifeq ($(shell uname -m),aarch64)
 LIB_SOURCES_ASM =\
-  util/crc32c_arm64_asm.S
+  util/crc32c_p8c10.S\
+  util/crc32c_p8c10_clmul_const.S
 LIB_SOURCES_C =
 else
 LIB_SOURCES_ASM =

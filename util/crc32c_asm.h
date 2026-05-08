@@ -11,8 +11,8 @@
 extern "C" {
 #endif
 
-extern uint32_t crc32c_arm64(uint32_t crc, const unsigned char *buf,
-                             unsigned long len);
+extern uint32_t crc32c_fusion_p8_c10_asm(const char* BUF, uint64_t LEN,
+                                          uint32_t wCRC);
 
 #ifdef __cplusplus
 }

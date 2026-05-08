@@ -671,7 +671,10 @@ shared-objects/util/crc32c_ppc_asm.o: util/crc32c_ppc_asm.S
 	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
 endif
 ifeq ($(HAVE_ARM64_CRC32),1)
-shared-objects/util/crc32c_arm64_asm.o: util/crc32c_arm64_asm.S
+shared-objects/util/crc32c_p8c10.o: util/crc32c_p8c10.S
+	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
+
+shared-objects/util/crc32c_p8c10_clmul_const.o: util/crc32c_p8c10_clmul_const.S
 	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
 endif
 $(shared_libobjects): shared-objects/%.o: %.cc
@@ -1793,7 +1796,10 @@ jls/util/crc32c_ppc_asm.o: util/crc32c_ppc_asm.S
 java_static_all_libobjects += $(java_static_ppc_libobjects)
 endif
 ifeq ($(HAVE_ARM64_CRC32),1)
-jls/util/crc32c_arm64_asm.o: util/crc32c_arm64_asm.S
+jls/util/crc32c_p8c10.o: util/crc32c_p8c10.S
+	$(AM_V_CC)$(CC) $(CFLAGS) $(JAVA_STATIC_FLAGS) $(JAVA_STATIC_INCLUDES) -c $< -o $@
+
+jls/util/crc32c_p8c10_clmul_const.o: util/crc32c_p8c10_clmul_const.S
 	$(AM_V_CC)$(CC) $(CFLAGS) $(JAVA_STATIC_FLAGS) $(JAVA_STATIC_INCLUDES) -c $< -o $@
 endif
 
@@ -2006,7 +2012,10 @@ jl/crc32c_ppc_asm.o: util/crc32c_ppc_asm.S
 java_all_libobjects += $(java_ppc_libobjects)
 endif
 ifeq ($(HAVE_ARM64_CRC32),1)
-jl/crc32c_arm64_asm.o: util/crc32c_arm64_asm.S
+jl/crc32c_p8c10.o: util/crc32c_p8c10.S
+	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
+
+jl/crc32c_p8c10_clmul_const.o: util/crc32c_p8c10_clmul_const.S
 	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
 endif
 
@@ -2107,7 +2116,10 @@ util/crc32c_ppc_asm.o: util/crc32c_ppc_asm.S
 	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
 endif
 ifeq ($(HAVE_ARM64_CRC32),1)
-util/crc32c_arm64_asm.o: util/crc32c_arm64_asm.S
+util/crc32c_p8c10.o: util/crc32c_p8c10.S
+	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
+
+util/crc32c_p8c10_clmul_const.o: util/crc32c_p8c10_clmul_const.S
 	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
 endif
 .cc.o:
