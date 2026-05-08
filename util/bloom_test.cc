@@ -272,7 +272,8 @@ TEST_F(FullBloomTest, FullVaryingLengths) {
     }
     Build();
 
-    ASSERT_LE(FilterSize(), (size_t)((length * 10 / 8) + 128 + 5)) << length;
+    EXPECT_LE(FilterSize(), (size_t)((length * FLAGS_bits_per_key / 8) +
+                                     CACHE_LINE_SIZE * 2 + 5));
 
     // All added keys must match
     for (int i = 0; i < length; i++) {
@@ -284,19 +285,22 @@ TEST_F(FullBloomTest, FullVaryingLengths) {
     double rate = FalsePositiveRate();
     if (kVerbose >= 1) {
       fprintf(stderr, "False positives: %5.2f%% @ length = %6d ; bytes = %6d\n",
-              rate * 100.0, length, static_cast<int>(FilterSize()));
+              rate*100.0, length, static_cast<int>(FilterSize()));
     }
-    ASSERT_LE(rate, 0.02);  // Must not be over 2%
-    if (rate > 0.0125)
-      mediocre_filters++;  // Allowed, but not too often
-    else
-      good_filters++;
+    if (FLAGS_bits_per_key == 10) {
+      EXPECT_LE(rate, 0.02);  // Must not be over 2%
+      if (rate > 0.0125) {
+        mediocre_filters++;  // Allowed, but not too often
+      } else {
+        good_filters++;
+      }
+    }
   }
   if (kVerbose >= 1) {
-    fprintf(stderr, "Filters: %d good, %d mediocre\n", good_filters,
-            mediocre_filters);
+    fprintf(stderr, "Filters: %d good, %d mediocre\n",
+            good_filters, mediocre_filters);
   }
-  ASSERT_LE(mediocre_filters, good_filters / 5);
+  EXPECT_LE(mediocre_filters, good_filters / 5);
 }
 
 }  // namespace TERARKDB_NAMESPACE
