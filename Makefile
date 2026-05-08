@@ -1808,6 +1808,10 @@ jls/util/crc32c_p8c10.o: util/crc32c_p8c10.S
 
 jls/util/crc32c_p8c10_clmul_const.o: util/crc32c_p8c10_clmul_const.S
 	$(AM_V_CC)$(CC) $(CFLAGS) $(JAVA_STATIC_FLAGS) $(JAVA_STATIC_INCLUDES) -c $< -o $@
+
+JAVA_STATIC_ASM_LIBOBJECTS = $(patsubst %.S.o,jls/%.S.o,$(LIB_SOURCES_ASM:.S=.o))
+java_static_arm64_libobjects = $(JAVA_STATIC_ASM_LIBOBJECTS)
+java_static_all_libobjects += $(java_static_arm64_libobjects)
 endif
 
 $(java_static_libobjects): jls/%.o: %.cc $(JAVA_COMPRESSIONS)
@@ -2024,6 +2028,11 @@ jl/crc32c_p8c10.o: util/crc32c_p8c10.S
 
 jl/crc32c_p8c10_clmul_const.o: util/crc32c_p8c10_clmul_const.S
 	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
+
+JAVA_ASM_OBJECTS = $(SHARED_ASM_OBJECTS)
+JAVA_ASM_LIBOBJECTS = $(patsubst %.S.o,jl/%.S.o,$(JAVA_ASM_OBJECTS))
+java_arm64_libobjects = $(JAVA_ASM_LIBOBJECTS)
+java_all_libobjects += $(java_arm64_libobjects)
 endif
 
 $(java_libobjects): jl/%.o: %.cc
