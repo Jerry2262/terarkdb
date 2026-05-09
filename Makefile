@@ -686,6 +686,7 @@ shared-objects/util/crc32c_p8c10_clmul_const.o: util/crc32c_p8c10_clmul_const.S
 	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
 endif
 ifeq ($(HAVE_ARM64_SVE),1)
+shared_libobjects := $(filter-out shared-objects/util/bloom.o,$(shared_libobjects))
 shared-objects/util/bloom.o: util/bloom.cc
 	$(AM_V_CC)mkdir -p $(@D) && $(CXX) $(CXXFLAGS) -march=armv8-a+sve2 -DCACHE_LINE_SIZE=64U -c $< -o $@
 endif
