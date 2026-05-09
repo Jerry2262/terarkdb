@@ -2040,6 +2040,12 @@ JAVA_ASM_LIBOBJECTS = $(patsubst %.S.o,jl/%.S.o,$(JAVA_ASM_OBJECTS))
 java_arm64_libobjects = $(JAVA_ASM_LIBOBJECTS)
 java_all_libobjects += $(java_arm64_libobjects)
 endif
+ifeq ($(HAVE_ARM64_SVE),1)
+java_libobjects := $(filter-out jl/util/bloom.o,$(java_libobjects))
+jl/util/bloom.o: util/bloom.cc
+	$(AM_V_CC)mkdir -p $(@D) && $(CXX) $(CXXFLAGS) -march=armv8-a+sve2 -DCACHE_LINE_SIZE=64U -fPIC -c $< -o $@
+java_all_libobjects += jl/util/bloom.o
+endif
 
 $(java_libobjects): jl/%.o: %.cc
 	$(AM_V_CC)mkdir -p $(@D) && $(CXX) $(CXXFLAGS) -fPIC -c $< -o $@ $(COVERAGEFLAGS)
