@@ -2731,6 +2731,21 @@ void VersionStorageInfo::CalculateBaseBytes(const ImmutableCFOptions& ioptions,
   if (!ioptions.level_compaction_dynamic_level_bytes) {
     base_level_ = (ioptions.compaction_style == kCompactionStyleLevel) ? 1 : -1;
 
+    // Find num_levels_in_use (highest non-empty level)
+    int num_levels_in_use = 1;
+    for (int i = 1; i < num_levels_; i++) {
+      for (const auto& f : files_[i]) {
+        if (f->fd.GetFileSize() > 0) {
+          num_levels_in_use = i;
+          break;
+        }
+      }
+    }
+
+    constexpr double kAutumnC = 0.8;
+    double autumn_base_scale =
+        std::min(1.0, std::pow(kAutumnC, num_levels_in_use - 1));
+
     // Calculate for static bytes base case
     for (int i = 0; i < ioptions.num_levels; ++i) {
       if (i == 0 && ioptions.compaction_style == kCompactionStyleUniversal) {
@@ -2738,11 +2753,14 @@ void VersionStorageInfo::CalculateBaseBytes(const ImmutableCFOptions& ioptions,
       } else if (i > 1) {
         level_max_bytes_[i] = MultiplyCheckOverflow(
             MultiplyCheckOverflow(level_max_bytes_[i - 1],
-                                  options.max_bytes_for_level_multiplier),
+                                  options.max_bytes_for_level_multiplier /
+                                      autumn_base_scale),
             options.MaxBytesMultiplerAdditional(i - 1));
       } else {
-        level_max_bytes_[i] = options.max_bytes_for_level_base;
+        level_max_bytes_[i] = static_cast<uint64_t>(
+            options.max_bytes_for_level_base / autumn_base_scale);
       }
+      autumn_base_scale = std::min(1.0, autumn_base_scale / kAutumnC);
     }
   } else {
     uint64_t max_level_size = 0;
